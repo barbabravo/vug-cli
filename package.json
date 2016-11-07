@@ -1,0 +1,31 @@
+{
+  "name": "qbs-cli",
+  "version": "0.2.1",
+  "description": "qyer商业后台系统前端初始化工具",
+  "main": "index.js",
+  "bin": {
+    "qbs": "bin/qbs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "biao.zhang<biao.zhang@qyer.com>",
+  "license": "ISC",
+  "dependencies": {
+    "babel-core": "^6.7.4",
+    "babel-preset-es2015": "^6.6.0",
+    "babel-preset-stage-2": "^6.5.0",
+    "chalk": "^1.1.3",
+    "commander": "^2.9.0",
+    "cz-conventional-changelog": "^1.2.0",
+    "glob": "^7.0.6",
+    "inquirer": "^1.1.3",
+    "lodash": "^4.16.6",
+    "ora": "^0.3.0"
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  }
+}

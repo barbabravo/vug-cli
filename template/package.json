@@ -1,0 +1,39 @@
+{
+  "name": "qyer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "dev": "webpack-dev-server",
+    "start": "node ./cli/start.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "babel-core": "^6.9.1",
+    "babel-loader": "^6.2.4",
+    "babel-plugin-transform-runtime": "^6.9.0",
+    "babel-preset-es2015": "^6.9.0",
+    "babel-preset-stage-0": "^6.5.0",
+    "clean-webpack-plugin": "^0.1.10",
+    "css-loader": "^0.23.1",
+    "glob": "^7.0.5",
+    "inquirer": "^1.0.3",
+    "less": "^2.7.1",
+    "less-loader": "^2.2.3",
+    "open-browser-webpack-plugin": "0.0.2",
+    "qbs-components": "git+ssh://git@git.2b6.me:qbs/qbs-components.git",
+    "qbs-extensions": "git+ssh://git@git.2b6.me:qbs/qbs-extensions.git",
+    "qbs-utils": "git+ssh://git@git.2b6.me:qbs/qbs-utils.git",
+    "require": "^2.4.20",
+    "script-loader": "^0.7.0",
+    "style-loader": "^0.13.1",
+    "vue": "^1.0.25",
+    "vue-hot-reload-api": "^1.3.3",
+    "vue-html-loader": "^1.2.2",
+    "vue-loader": "^8.5.2",
+    "vue-style-loader": "^1.0.0",
+    "vue-validator": "^3.0.0-alpha.1",
+    "webpack": "^1.13.1"
+  }
+}

@@ -1,0 +1,31 @@
+/* extend table*/
+.table tr{
+    &.nowrap{
+        th,td{
+            white-space:nowrap;
+        }
+    }
+}
+
+.ml-short{
+    margin-left:15px;
+}
+.ml-long{
+    margin-left:30px;
+}
+.mt-short{
+    margin-top:15px;
+}
+.mt-long{
+    margin-top:30px;
+}
+
+/* extend navbar*/
+.navbar-green {
+    background-color: rgb(63, 159, 95);
+}
+
+.navbar-green .navbar-brand,
+.navbar-green .text-white {
+    color: #fff !important;
+}

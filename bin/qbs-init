@@ -1,0 +1,84 @@
+#!/usr/bin/env node
+
+const path      = require('path');
+const ora       = require('ora');
+const inquirer  = require('inquirer')
+
+const logger    = require('../lib/logger.js');
+
+const CONSTANTS = require('../lib/constants.js');
+
+const spawn     = require('child_process').spawn;
+const exec      = require('child_process').exec;
+
+/** 
+ * settings
+ */
+const questions = {
+    type: 'confirm',
+    message: '确定在当前目录初始化前端目录吗,继续？',
+    name: 'ok',
+    default: true
+}
+inquirer.prompt(questions).then(answers => {
+    if (answers.ok) {
+        run();
+    }
+})
+
+function run() {
+    var base_path   = 'fe';
+
+    exec('ls | grep ^' + CONSTANTS.BASE_FOLDER_NAME + '$', (error, stdout, stderr) => {
+        if(stdout){
+            logger.fatal(`该项目已存在，请删除目录下${CONSTANTS.BASE_FOLDER_NAME}`);
+            // 为了避免误操作，不在提供覆盖提示操作
+            // inquirer.prompt({
+            //     type:'confirm',
+            //     message:`该项目已存在，请删除目录下${CONSTANTS.BASE_FOLDER_NAME}`,
+            //     name: 'ok',
+            //     default: false}).then(answers => {
+            //         if(answers.ok){
+            //             execInit();
+            //         }
+            //     })
+        }else{
+            execInit();
+        }
+    })
+}
+
+function execInit(){
+    console.log(CONSTANTS);
+    exec('cp -r ' + CONSTANTS.TEMPLATE_PATH + ' ' + CONSTANTS.BASE_FOLDER_NAME, (error, stdout, stderr) => {
+        if(error){
+            logger.fatal('复制项目初始目录失败，请检查')
+        }else{
+            logger.success(`已初始化成功! 请进入${CONSTANTS.BASE_FOLDER_NAME}目录 => qbs start`)
+            // inquirer.prompt({
+            //     type:'confirm',
+            //     message:'要进入开发模式吗？',
+            //     name: 'ok',
+            //     default:true
+            // }).then( answers => {
+            //     if(answers.ok){
+            //         var cur_path = path.resolve('fe');
+            //         var npm = exec('npm install ' + cur_path)
+            //         npm.stdout.on('data', data=>{
+            //             logger.log(data.toString());
+            //         })
+            //         npm.stderr.on('data', data=>{
+            //             logger.fatal(data.toString());
+            //         })
+            //         npm.on('close', code => {
+            //             if(code != 0){
+            //                 logger.fatal(`执行 npm install失败, ${code}`)
+            //             }else{
+            //                 logger.log('执行完毕')
+            //             }
+            //         })
+            //     }
+            // })
+        }
+    });
+}
