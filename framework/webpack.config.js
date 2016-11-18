@@ -1,12 +1,18 @@
+/*	 
+
+
+	
+
+
+*/
+
 var webpack           = require('webpack');
 var OpenBrowserPlugin = require('open-browser-webpack-plugin');
-var CleanWebpackPlugin = require('clean-webpack-plugin');
+var CleanWebpackPlugin= require('clean-webpack-plugin');
 
 var log 			  = console.log;
 var spawn  			  = require('child_process').spawn;
 var isDebug			  = true;
-var isBuildOne		  = false;
-var buildOneEntry     = null ;
 
 var arguments = process.argv.splice(2).join(' ');
 if(arguments.indexOf('-build') != -1){
@@ -21,6 +27,8 @@ var configs		   = glob.sync("./src/pages/**/*.json");
 
 var entrys		   = glob.sync("./src/pages/**/*.entry.js");
 
+var template_path  = './node_modules/qbs-template/templates'
+
 var webpackEntrys  = {};
 var webpackPlugins = [];
 
@@ -33,26 +41,26 @@ CreateHtml.prototype.apply = function(compiler) {
 			var scripts;
 			var jsFile;
 			var savePath =  config.replace('./src/pages/','').replace('.json','.html');
+			var base_url, dist_base_url;
 			if(isDebug){
-				jsFile   = config.replace('./src/pages/','/').replace('.json','.js');
-				scripts  = `
-						<script src="/static/libs/dist/libs.js" type="text/javascript"></script>
-						<script src="/common.js"></script>
-						<script src="${jsFile}""></script>
-					</body>
-					</html>`;
+				base_url = 'http://localhost:9876';
+				dist_base_url = ''
 			}else{
-				jsFile   = config.replace('./src/pages/','/fe/dist/').replace('.entry.js','.js');
-				scripts  = `
-						<script src="/static/libs/dist/libs.min.js" type="text/javascript"></script>
-						<script src='/fe/dist/common.js'></script>
-						<script src='${jsFile}'></script>
-					</body>
-					</html>`;
+				base_url = ''
+				dist_base_url = '/fe/dist';
 			}
+			jsFile   = config.replace('./src/pages/','').replace('.json','.js');
+			scripts  = `
+					<script src="${base_url}/static/libs/dist/libs.js" type="text/javascript"></script>
+					<script src="${base_url}${dist_base_url}/common.js"></script>
+					<script src="${base_url}${dist_base_url}/${jsFile}""></script>
+				</body>
+				</html>`;
+
 			var rf    = require("fs");  
+			// console.log(rf.readFileSync(config).toString());
 			var template = JSON.parse(rf.readFileSync(config).toString()).template;
-			var data  = rf.readFileSync("./templates/" + template + "/layout.html","utf-8");  
+			var data  = rf.readFileSync(path.join(template_path, template, "/layout.html"),"utf-8");  
 			var fileContents = data.replace(/<!--buildjs-->(.|\n)*/gi,scripts);
 
 			compilation.assets[savePath] = {
@@ -67,16 +75,8 @@ CreateHtml.prototype.apply = function(compiler) {
 		callback();
 	});
 };
-
-
-// init webpackEntrys ,  
-// init webpackPlugins ,  
+ 
 (function(){
-
-	// 特殊页面模板转换
-	var conver = {
-		'./src/pages/login.entry.js':'./src/pages/layout/empty.html'
-	};
 
 	var entryName = '';
 	var obj 	  = null;
@@ -106,7 +106,7 @@ if(!isDebug){
 		}
 	}));
 }else{
-	webpackPlugins.push(new OpenBrowserPlugin({url: 'http://localhost:8080'}));
+	webpackPlugins.push(new OpenBrowserPlugin({url: 'http://localhost:9876'}));
 	webpackPlugins.push(new webpack.HotModuleReplacementPlugin());
 }
 
@@ -126,8 +126,7 @@ var webpack_config = {
 	module: {
 		loaders:[
 			{test: /\.js[x]?$/, exclude: /node_modules/, loader: 'babel-loader?presets[]=es2015'},
-			{test: /\.vue$/, loader: 'vue'},
-			// {test: /\.css$/, loader: 'style!css'}
+			{test: /\.vue$/, loader: 'vue'}
 		]
 	},
   	plugins:webpackPlugins,
@@ -137,9 +136,10 @@ var webpack_config = {
 	    hot: true,
 	    inline: true,
 	    progress: true,
+	    port:9876
 	}
 };
 
-console.log(webpack_config);
+// console.log(webpack_config);
 
 module.exports = webpack_config;

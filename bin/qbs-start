@@ -1,191 +1,259 @@
 #!/usr/bin/env node
 
-var log            	= console.log;
-var fs             	= require('fs');
-var path           	= require('path');
-var glob           	= require("glob");
-var inquirer       	= require("inquirer");
-var _ 				= require('lodash');
+const fs             	= require('fs')
+const path           	= require('path')
+const glob           	= require("glob")
+const inquirer       	= require("inquirer")
+const _ 				= require('lodash')
+const ora 				= require('ora')
+const spawn          	= require('child_process').spawn
+const chalk 			= require('chalk')
+const current_path 		= process.cwd()
 
-var spawn          	= require('child_process').spawn;
+const logger    		= require('../lib/logger.js')
+const CONSTANTS 		= require('../lib/constants.js')
+const utils				= require('../lib/utils')
 
-var cur_path 		= process.cwd();
 
-console.log(cur_path);
-
-var utils = {
-	getFullPath:(file_path_without_ext, ext)=>{
-		return `${file_path_without_ext}${ext}`;
-	}
-}
+const template_folder_path   	= path.join(current_path, './node_modules/qbs-template/templates')
+const template_git_path   		= CONSTANTS.BASE_TEMPLATE_GIT_PATH
 
 var funs = {
+	//安装依赖包
+	installDep:function(){
+		var spinner = ora('正在安装依赖包，可能需要较长时间，请耐心等待...')
+		var npm		= spawn('npm', ['install'])
+		spinner.start()
+		npm.stdout.on('data',(data)=>{
+			logger.log(data.toString())
+		})
+
+		npm.stderr.on('close', (err)=>{
+			spinner.stop()
+			if(err){
+				logger.log(err)
+				logger.fatal('安装失败\n')
+			}else{
+				logger.success('安装依赖包完毕\n')
+				initAsk(MENU)
+			}
+		})
+	},
+	//更新模板库
+	updateTemplateRepo:function(){
+		return new Promise((resolve,reject)=>{
+			var spinner = ora('正在拉取模板库...')
+			var npm		= spawn('npm', ['install',template_git_path])
+			spinner.start()
+			npm.stdout.on('data',(data)=>{
+				logger.log(data.toString())
+			})
+
+			npm.stderr.on('close', (err)=>{
+				spinner.stop()
+				if(err){
+					logger.fatal(`拉取模板库${template_git_path}失败，请检查`)
+					reject()
+				}else{
+					logger.success('更新完毕\n')
+					resolve()
+				}
+			})
+		})
+	},
+	manuallyUpdateTemplateRepo: function(){
+		funs.updateTemplateRepo().then(()=>{
+			initAsk(MENU)
+		})
+	},
 	// 新建路由
 	createRouter:function(){
-		var options = {};
-		function chooseTemplate(){
-			return new Promise((resolve, reject) => {
-				console.log('正在拉取可用模板...')
+		let options = {}
 
-				var template_list = fs.readdirSync(path.resolve(__dirname, '../template/templates'))
+		const isExist = (input_path)=>{
+			let file_path 	= path.resolve(current_path, `./src/pages${input_path}`)
+			let entryPath 	= utils.join(file_path, '.entry.js')
+			let vuePath 	= utils.join(file_path, '.vue')
+			let configPath 	= utils.join(file_path, '.json')
+			let logger_text = ''
+			let exist_flag 	= false
 
-				var questions = {
-				    type: 'list',
-				    name: 'template',
-				    message: '请选择可用模板\n',
-				    choices:template_list
-				};
-				inquirer.prompt(questions).then(function (answers) {
-					resolve(_.merge(options, {template: answers.template}));
-				});
-			});	
+
+			if(fs.existsSync(entryPath)){
+				logger_text += `${entryPath} 文件已存在\n`
+				exist_flag = true
+			}
+			if(fs.existsSync(vuePath)){
+				logger_text += `${vuePath} 文件已存在\n`
+				exist_flag = true
+			}
+			if(fs.existsSync(configPath)){
+				logger_text += `${configPath} 文件已存在\n`
+				exist_flag = true
+			}
+
+			if(exist_flag === true){
+				logger.warn(logger_text + '创建失败！\n')
+				return true
+			}else{
+				_.merge(options, {
+					entryPath,
+					vuePath,
+					configPath
+				})
+				return false
+			}
 		}
 
-		function getPath(options){
+		const getPath = ()=>{
 			return new Promise((resolve, reject) => {
-				var questions = [{
+				let questions = [{
 				    type: 'input',
 				    name: 'path',
 				    message: '请输路由路径，如：/user/add  (无需 .html 结尾)\n',
 				    validate: function (value) {
 				    	if(!/^\//gi.test(value)){
-							return '请以 / 开头';
+							return '请以 / 开头'
 				    	}
 				    	if(/\/$/gi.test(value)){
-							return '不能以 / 结尾';
+							return '不能以 / 结尾'
 				    	}
 				    	if(/\.html$/gi.test(value)){
-							return '不能以 .html 结尾';
+							return '不能以 .html 结尾'
 				    	}
-				      return true;
+				      	return true
 				    }
 				  }
-				];
+				]
 				inquirer.prompt(questions).then(function (answers) {
-					resolve(_.merge(options, {path:answers.path}));
-				});
-			});
+					if(!isExist(answers.path)){
+						resolve()
+					}else{
+						funs.createRouter()
+					}
+				})
+			})
 		}
 
-		function checkExist(options){
-			return new Promise((resolve, reject) => { 
-				var file_path = path.resolve(cur_path, `./src/pages${options.path}`);
-				var entryPath = utils.getFullPath(file_path, '.entry.js');
-				var vuePath = utils.getFullPath(file_path, '.vue');
-				var configPath = utils.getFullPath(file_path, '.json');
+		
 
-				if(fs.existsSync(entryPath)){
-					reject(`${entryPath} 文件已存在`);
+		const chooseTemplate = ()=>{
+			return new Promise((resolve, reject) => {
+				let askTemplateQuestion = ()=>{
+						let template_list = fs.readdirSync(template_folder_path).filter(path=>{
+							return !/^package\.json$/.test(path)
+						})
+						let questions = {
+						    type: 'list',
+						    name: 'template',
+						    message: '请选择可用模板\n',
+						    choices:template_list
+						}
+						inquirer.prompt(questions).then(function (answers) {
+							resolve(_.merge(options, {
+								template: answers.template
+							}))
+						})
 				}
-				if(fs.existsSync(vuePath)){
-					reject(`${vuePath} 文件已存在`);
+			
+				let exists = fs.existsSync(template_folder_path)
+				if(exists){
+					askTemplateQuestion()
+				}else{
+					funs.updateTemplateRepo().then(()=>{
+						askTemplateQuestion()
+					})
 				}
-				if(fs.existsSync(configPath)){
-					reject(`${configPath} 文件已存在`);
-				}
-				resolve(_.merge(options, {
-					entryPath,
-					vuePath,
-					configPath
-				}));
-			});
+			})
 		}
 
-		function confirm(options){
+
+		const confirm = ()=>{
 			return new Promise((resolve, reject) => {
 				var message = [
-					'系统将创建以下文件：',
-					'    (1)  ' + options.entryPath,
-					'    (2)  ' + options.vuePath,
-					'    (3)  ' + options.configPath,
-					'',
+					'系统将使用模板 【' + chalk.red(options.template) + '】 创建以下文件：',
+					'    (1)  ' + chalk.green(options.entryPath),
+					'    (2)  ' + chalk.green(options.vuePath),
+					'    (3)  ' + chalk.green(options.configPath),
+					'\n',
 					'是否继续 ？'
-				].join('\n');
+				].join('\n')
 				var questions = [{
 				    type: 'confirm',
 				    name: 'isDo',
 				    message:message,
 				    default:true
 				  }
-				];
+				]
 				inquirer.prompt(questions).then(function (answers) {
 					if(answers.isDo){
-						resolve(options);
+						resolve(options)
 					}else{
 						reject('文件创建终止 ！')
 					}
-				});
+				})
 
-			});			
+			})			
 		}
 
-		function create(options){
+		const create = ()=>{
 			return new Promise((resolve, reject) => {
-				var parents =  options.entryPath.replace('./src/pages/','').substr(1).split('/').length;
+				let parents = path.relative(current_path, options.entryPath).replace('src/pages','').split('/').length
 				if(!parents){
-					parents = './';
+					parents = './'
 				}else{
-					parents = '../'.repeat(parents);
+					parents = '../'.repeat(parents)
 				}
- 
-				var entryPath       = options.entryPath;
-				var vuePath         = options.vuePath;
-				var configPath      = options.configPath;
 
-				var dir             = entryPath.substring(0,entryPath.lastIndexOf('/'))
-				var entryName       = entryPath.substr(entryPath.lastIndexOf('/')+1);
+				let base_url = `${parents}node_modules/qbs-template/templates/${options.template}`
 
-				entryName           = entryName.substring(0,entryName.indexOf('.'));
+				let entryPath       = options.entryPath
+				let vuePath         = options.vuePath
+				let configPath      = options.configPath
+
+				let dir             = entryPath.substring(0,entryPath.lastIndexOf('/'))
+				let entryName       = entryPath.substr(entryPath.lastIndexOf('/')+1)
+
+				entryName           = entryName.substring(0,entryName.indexOf('.'))
 
 
-				var entryFileContent = fs.readFileSync(path.resolve(__dirname, '../template/templates/', `${options.template}/template.entry.js`), 'utf8').toString()
-					.replace(/{name}/gi,entryName)
-					.replace(/{parents}/gi,parents);
+				let entryFileContent = fs.readFileSync(path.resolve(template_folder_path, `${options.template}/template.entry.js`), 'utf8').toString()
+					.replace(/\[page_name\]/gi,entryName)
+					.replace(/\[base_url\]/gi,base_url)
 
-				var vueFileContent   = fs.readFileSync(path.resolve(__dirname, '../template/templates/', `${options.template}/template.vue`), 'utf8').toString()
-					.replace(/{path}/gi,vuePath)
-					.replace(/{parents}/gi,parents);
+				let vueFileContent   = fs.readFileSync(path.resolve(template_folder_path, `${options.template}/template.vue`), 'utf8').toString()
+					.replace(/\[page_path\]/gi,vuePath)
+					.replace(/\[base_url\]/gi,base_url)
 
-				var configFileContent   = fs.readFileSync(path.resolve(__dirname, '../template/templates/', `${options.template}/config.json`), 'utf8').toString()
+				let configFileContent   = fs.readFileSync(path.resolve(template_folder_path, `${options.template}/config.json`), 'utf8').toString()
 
 				spawn('mkdir', ['-p',dir]).on('exit',function(){
 					try{
-						fs.writeFileSync(entryPath,entryFileContent);
-						fs.writeFileSync(vuePath,vueFileContent);
-						fs.writeFileSync(configPath, configFileContent);
-						resolve();
+						fs.writeFileSync(entryPath,entryFileContent)
+						fs.writeFileSync(vuePath,vueFileContent)
+						fs.writeFileSync(configPath, configFileContent)
+						resolve()
 					}catch(e){
 						reject(e.toString())
 					}
-				});
-			});
+				})
+			})
 		}
-		chooseTemplate()
-			.then(getPath)
-			.then(checkExist)
+		getPath()
+			.then(chooseTemplate)
 			.then(confirm)
 			.then(create)
 			.then(function(){
-				log('\n文件已生成。')
-				var questions = [{
-				    type: 'confirm',
-				    name: 'startDev',
-				    message:'是否启动开发服务器'
-				  }
-				];
-				inquirer.prompt(questions).then(function (answers) {
-					if(answers.startDev){
-						funs.startDev();
-					}
-				});
+				logger.success('\n文件已生成。\n')
+				initAsk()
 			})
-			.catch(e=>log(e))
+			.catch(e=>logger.fatal(e))
 	},
 
 
 	// 启动开发服务器
 	startDev:function(){
-		spawn('webpack-dev-server', { stdio:'inherit' }); 
+		spawn('webpack-dev-server',['--port=9876'], { stdio:'inherit' }) 
 	},
 
 	askIfStartDev: function(){
@@ -194,184 +262,185 @@ var funs = {
 		    name: 'startDev',
 		    message:'是否启动开发服务器'
 		  }
-		];
+		]
 		inquirer.prompt(questions).then(function (answers) {
 			if(answers.startDev){
-				funs.startDev();
+				funs.startDev()
 			}
-		});
+		})
 	},
 
 	// 编译
 	build:function(){
-		var loader = [
-		  '/ building .',
-		  '| building ..',
-		  '\\ building ...',
-		  '- building ....'
-		];
-		var i = 4;
-		var ui = new inquirer.ui.BottomBar({bottomBar: loader[i % 4]});
-		var timer = setInterval(function () {
-			ui.updateBottomBar(loader[i++ % 4]);
-		}, 200);
-
-		var d = Date.now();
-		var webpack = spawn('webpack',['-build']);
+		let d = Date.now()
+		let webpack = spawn('webpack',['-build'])
+		let spinner = ora('正在编译中,请稍候...')
+		spinner.start()
 
 		webpack.on('close',function(code){
+			spinner.stop()
 			if(code == 0){
-				log('编译完成 ！' + ('耗时：' + ( (Date.now()-d))/1000 )+'秒' ) ;
-				clearTimeout(timer);
-
-				var questions = [{
+				logger.log('编译完成 ！' + ('耗时：' + ( (Date.now()-d))/1000 )+'秒' ) 
+				
+				let questions = [{
 					type: 'confirm',
 					name: 'startDev',
 					message:'是否要提交代码'
-				}
-				];
+				}]
 				inquirer.prompt(questions).then(function (answers) {
 					if(answers.startDev){
-						funs.submit();
+						funs.submit()
 					}else{
-						process.exit();
+						process.exit()
 					}
-				});
+				})
 			}else{
-				console.log(`编译错误: ${code}`);
-				log('发生错误' + err);
-				clearTimeout(timer);
+				logger.fatal(`编译错误: ${code}`)
 			}
-		});
+		})
 	},
 
 	// 重建全部入口文件
 	reCreateEntry(){
-		var configs          = glob.sync(path.resolve(cur_path, "./src/pages/**/*.json"));
-		var entrys           = glob.sync(path.resolve(cur_path, "./src/pages/**/*.entry.js"));
-		var options			 = {};
-		var entryName        = '';
-		var entryPath 	     = '';
-		var entryFileContent = '';
-		var entry_template   = '';
-		var parents          = '';
+		let configs          = glob.sync(path.resolve(current_path, "./src/pages/**/*.json"))
+		let entrys           = glob.sync(path.resolve(current_path, "./src/pages/**/*.entry.js"))
+		let options			 = {}
+		let entryName        = ''
+		let entryPath 	     = ''
+		let entryFileContent = ''
+		let entry_template   = ''
+		let parents          = ''
 
 		configs.forEach(config=>{
-			template  			= JSON.parse(fs.readFileSync(config, 'utf8').toString()).template;
+			template  			= JSON.parse(fs.readFileSync(config, 'utf8').toString()).template
 
-			parents         	= config.replace('./src/pages/','').substr(1).split('/').length;
-			console.log(parents);
-			parents         	= parents?'../'.repeat(parents):'./';
-			console.log(parents);
-			entryName       	= config.substr(config.lastIndexOf('/')+1);
-			entryName       	= entryName.substring(0,entryName.indexOf('.'));
-
-			entryPath   		= path.resolve(config, '..', utils.getFullPath(entryName, '.entry.js'));
+			parents         	= config.replace('./src/pages/','').substr(1).split('/').length
 			
-			template_entryPath	= path.resolve(__dirname, '..', `template/templates/${template}/template.entry.js`);
+			parents         	= parents?'../'.repeat(parents):'./'
+			
+			entryName       	= config.substr(config.lastIndexOf('/')+1)
+			entryName       	= entryName.substring(0,entryName.indexOf('.'))
+
+			entryPath   		= path.resolve(config, '..', utils.join(entryName, '.entry.js'))
+			
+			template_entryPath	= path.resolve(template_folder_path, `${template}/template.entry.js`)
 			
 			options 			= {
 				template:template,
 				entryPath:entryPath
-			};
+			}
 
-			entryFileContent = fs.readFileSync(template_entryPath, 'utf8').toString().replace(/{name}/gi,entryName).replace(/{parents}/gi,parents);
+			entryFileContent = fs.readFileSync(template_entryPath, 'utf8').toString().replace(/\[page_name\]/gi,entryName).replace(/{parents}/gi,parents)
 			
-			fs.writeFileSync(entryPath,entryFileContent);
-		});
-		log('重建完成 ！ ')
-		funs.askIfStartDev();
+			fs.writeFileSync(entryPath,entryFileContent)
+		})
+		logger.log('重建完成 ！ ')
+		funs.askIfStartDev()
 	},
 
 	// 提交代码
 	submit(){
-		var free  = spawn('git',['status'],{ stdio:'inherit' }); 
+		let free  = spawn('git',['status'],{ stdio:'inherit' }) 
 		free.on('exit',function(){
-			var questions = [{
-				    type: 'confirm',
-				    name: 'isDo',
-				    message:'\n确定提交以上文件吗？'
-				  }
-				];
-				inquirer.prompt(questions).then(function (answers) {
-					if(answers.isDo){
-						questions = [{
-						    type: 'input',
-						    name: 'des',
-						    message:'请输入 commit 信息: ',
-	    				    validate: function (value) {
-						    	if(!value.trim()){
-									return 'commit 信息不能为空';
-						    	}
-							    return true;
-						    }
-						  }
-						];
-						inquirer.prompt(questions).then(function (answers) {
-							require('child_process').exec(`git add -A . ; git commit -m '${answers.des}' ; git push;`).on('exit',function(){
-								log('提交完成！')
-							});
-						});
-					}
-				});
-		});
+			let questions = [{
+			    type: 'confirm',
+			    name: 'isDo',
+			    message:'\n确定提交以上文件吗？'
+			  }
+			]
+			inquirer.prompt(questions).then(function (answers) {
+				if(answers.isDo){
+					questions = [{
+					    type: 'input',
+					    name: 'des',
+					    message:'请输入 commit 信息: ',
+    				    validate: function (value) {
+					    	if(!value.trim()){
+								return 'commit 信息不能为空'
+					    	}
+						    return true
+					    }
+					  }
+					]
+					inquirer.prompt(questions).then(function (answers) {
+						require('child_process').exec(`git add -A .  git commit -m '${answers.des}'  git push`).on('exit',function(){
+							logger.log('提交完成！')
+						})
+					})
+				}
+			})
+		})
 	},
 
-	// 生成 html 文件，html 文件，都使用本地开发服务器路径
+	// 组合模板文件生成html，使用本地开发服务器路径
 	createHTML(){
-		var glob   = require("glob");
-		var entrys = glob.sync(path.resolve(cur_path, "./src/pages/**/*.entry.js"));
-		var rf     = require("fs");  
-		var data   = rf.readFileSync(path.resolve(cur_path, "./src/templates/page_template.html","utf-8"));
-		var tasks  = entrys.map(i=>{
+		let glob   = require("glob")
+		let configs = glob.sync(path.resolve(current_path, "./src/pages/**/*.json"))
+		let entrys = glob.sync(path.resolve(current_path, "./src/pages/**/*.entry.js"))
+		let tasks  = configs.map(config=>{
 			return new Promise((resolve, reject) => {
-				var scripts;
-				var jsFile;
-				var savePath =  i.replace('./src/pages/','./dist/').replace('.entry.js','.html');
-					jsFile   = i.replace('./src/pages/','').replace('.entry.js','.js');
+				let scripts
+
+				let savePath =  config.replace('src/pages/','dist/').replace('.json','.html')
+				
+				let	jsFile   = path.relative(current_path, config).replace('src/pages/','').replace('.json','.js')
 					scripts  = `
-						<script src="/static/libs/dist/libs.js" type="text/javascript"></script>
-						<script src='http://localhost:8080/common.js'></script>
-						<script src='http://localhost:8080/${jsFile}'></script>
+						<script src="http://localhost:9876/static/libs/dist/libs.js" type="text/javascript"></script>
+						<script src='http://localhost:9876/common.js'></script>
+						<script src='http://localhost:9876/${jsFile}'></script>
 					</body>
-					</html>`;
-					var fileContents = data.replace(/<!--buildjs-->(.|\n)*/gi,scripts);
-					spawn('mkdir', ['-p',savePath.substring(0,savePath.lastIndexOf('/'))  ]).on('exit',()=>{
-						rf.writeFileSync(savePath,fileContents);
-						resolve();
-					});
-			});
-		});
+					</html>`
+
+				let rf       = require("fs")  
+				let template = JSON.parse(rf.readFileSync(config).toString()).template
+				let data     = rf.readFileSync(path.resolve(template_folder_path, `${template}/layout.html`), 'utf-8')
+
+				let fileContents = data.replace(/<!--buildjs-->(.|\n)*/gi,scripts)
+				spawn('mkdir', ['-p',savePath.substring(0,savePath.lastIndexOf('/'))  ]).on('exit',()=>{
+					rf.writeFileSync(savePath,fileContents)
+					resolve()
+				})
+
+			})
+		})
 		Promise.all(tasks).then(()=>{
-			log('全部 html 已生成，记得发布使用 build all 功能啊。')
-			funs.askIfStartDev();
-		});
+			logger.log('全部 html 已生成，注意：发布使用 编译 功能。')
+			funs.askIfStartDev()
+		})
 	}
 }
 
 
-console.log('\n\n\n\n');
-var menus = [
-	{text:'1. 启动开发服务器',		fun:funs.startDev},
-	{text:'2. 新建路由',			fun:funs.createRouter},
-	{text:'3. 使用调试模式（使用本地js文件,接口读取后端数据）',fun:funs.createHTML},
-	{text:'4. 编译并发布',		fun:funs.build},
-	// {text:'4. 编译 - one',		fun:funs.buildOne},
-	{text:'5. 重建全部入口文件',	fun:funs.reCreateEntry},
-	{text:'6. 提交代码',			fun:funs.submit}
-];
+
+const MENU = [
+	{text:'安装依赖包',fun:funs.installDep},
+	{text:'启动开发服务器',fun:funs.startDev},
+	{text:'新建页面',fun:funs.createRouter},
+	{text:'使用调试模式（使用本地js文件,接口读取后端数据）',fun:funs.createHTML},
+	{text:'编译全部',fun:funs.build},
+	{text:'编译单个文件',fun:funs.buildOne},
+	{text:'重建全部入口文件',fun:funs.reCreateEntry},
+	// {text:'提交代码',fun:funs.submit}
+	{text:'手动更新模板库',fun:funs.manuallyUpdateTemplateRepo},
+]
 
 
-inquirer.prompt([{
-	type: 'list',
-	name: 'menu',
-	message: 'QBS 命令行工具。',
-	choices: menus.map(i=>i.text)
-}]).then(function(answers) {
-	var fun = menus.find(i=>i.text==answers.menu).fun;
-	if(fun){
-		fun();
-	}else{
-		log('功能还未实现 ')
-	}
-});
+const initAsk = (menus)=>{
+	menus = menus || MENU.slice(0)
+
+	inquirer.prompt([{
+		type: 'list',
+		name: 'menu',
+		message: 'QBS 命令行工具。',
+		choices: menus.map(i=>i.text)
+	}]).then(function(answers) {
+		var fun = menus.find(i=>i.text==answers.menu).fun
+		if(fun){
+			fun()
+		}else{
+			logger.log('功能还未实现，请联系前端工程师@张彪')
+		}
+	})
+}
+
+initAsk()
