@@ -1,6 +1,6 @@
 {
   "name": "qyer",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "",
   "main": "main.js",
   "author": "",
@@ -24,12 +24,13 @@
     "vue-html-loader": "^1.2.2",
     "vue-loader": "^8.5.2",
     "vue-style-loader": "^1.0.0",
-    "vue-validator": "^3.0.0-alpha.1"
+    "vue-validator": "^2.1.7"
   },
   "devDependencies": {
     "clean-webpack-plugin": "^0.1.10",
     "open-browser-webpack-plugin": "0.0.2",
     "require": "^2.4.20",
-    "webpack": "^1.13.3"
+    "webpack": "^1.13.3",
+    "webpack-dev-server": "^1.16.2"
   }
 }

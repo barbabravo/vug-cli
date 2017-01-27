@@ -1,11 +1,3 @@
-/*	 
-
-
-	
-
-
-*/
-
 var webpack           = require('webpack');
 var OpenBrowserPlugin = require('open-browser-webpack-plugin');
 var CleanWebpackPlugin= require('clean-webpack-plugin');
@@ -51,14 +43,13 @@ CreateHtml.prototype.apply = function(compiler) {
 			}
 			jsFile   = config.replace('./src/pages/','').replace('.json','.js');
 			scripts  = `
-					<script src="${base_url}/static/libs/dist/libs.js" type="text/javascript"></script>
+					<script src="${base_url}/static/libs/dist/libs.min.js" type="text/javascript"></script>
 					<script src="${base_url}${dist_base_url}/common.js"></script>
 					<script src="${base_url}${dist_base_url}/${jsFile}""></script>
 				</body>
 				</html>`;
 
 			var rf    = require("fs");  
-			// console.log(rf.readFileSync(config).toString());
 			var template = JSON.parse(rf.readFileSync(config).toString()).template;
 			var data  = rf.readFileSync(path.join(template_path, template, "/layout.html"),"utf-8");  
 			var fileContents = data.replace(/<!--buildjs-->(.|\n)*/gi,scripts);
@@ -126,7 +117,8 @@ var webpack_config = {
 	module: {
 		loaders:[
 			{test: /\.js[x]?$/, exclude: /node_modules/, loader: 'babel-loader?presets[]=es2015'},
-			{test: /\.vue$/, loader: 'vue'}
+			{test: /\.vue$/, loader: 'vue'},
+			{test: /\.less$/, loader: 'style!css!less'}
 		]
 	},
   	plugins:webpackPlugins,

@@ -8,21 +8,23 @@ const _ 				= require('lodash')
 const ora 				= require('ora')
 const spawn          	= require('child_process').spawn
 const chalk 			= require('chalk')
-const current_path 		= process.cwd()
 
 const logger    		= require('../lib/logger.js')
 const CONSTANTS 		= require('../lib/constants.js')
 const utils				= require('../lib/utils')
 
+const CURRENT_PATH 		= process.cwd()
 
-const template_folder_path   	= path.join(current_path, './node_modules/qbs-template/templates')
+const template_folder_path   	= path.join(CURRENT_PATH, 'node_modules/qbs-template/templates')
 const template_git_path   		= CONSTANTS.BASE_TEMPLATE_GIT_PATH
 
-var funs = {
+// console.log(template_folder_path)
+
+const funs = {
 	//安装依赖包
-	installDep:function(){
-		var spinner = ora('正在安装依赖包，可能需要较长时间，请耐心等待...')
-		var npm		= spawn('npm', ['install'])
+	installOrUpdateDep:function(flag){
+		let spinner = ora(`正在${flag=='update'?'更新':'安装'}依赖包，可能需要较长时间，请耐心等待...`);
+		let npm		= spawn('npm', [flag]);
 		spinner.start()
 		npm.stdout.on('data',(data)=>{
 			logger.log(data.toString())
@@ -39,14 +41,21 @@ var funs = {
 			}
 		})
 	},
+	installDep: function(){
+		funs.installOrUpdateDep('install');
+	},
+	updateDep: function(){
+		funs.installOrUpdateDep('update');
+	},
 	//更新模板库
 	updateTemplateRepo:function(){
 		return new Promise((resolve,reject)=>{
-			var spinner = ora('正在拉取模板库...')
-			var npm		= spawn('npm', ['install',template_git_path])
+			let exist = fs.existsSync(template_folder_path);
+			let spinner = ora('正在拉取模板库...')
+			let npm		= spawn('npm', ['install',template_git_path])
 			spinner.start()
 			npm.stdout.on('data',(data)=>{
-				logger.log(data.toString())
+				//logger.log(data.toString())
 			})
 
 			npm.stderr.on('close', (err)=>{
@@ -63,6 +72,14 @@ var funs = {
 	},
 	manuallyUpdateTemplateRepo: function(){
 		funs.updateTemplateRepo().then(()=>{
+			let template_list = fs.readdirSync(template_folder_path).filter(path=>{
+				return !/^package\.json$/.test(path)
+			})
+			logger.log('当前可用模板包括：')
+			template_list.map((template)=>{
+				logger.success(`${template}`);
+			})
+			logger.log('');
 			initAsk(MENU)
 		})
 	},
@@ -71,7 +88,7 @@ var funs = {
 		let options = {}
 
 		const isExist = (input_path)=>{
-			let file_path 	= path.resolve(current_path, `./src/pages${input_path}`)
+			let file_path 	= path.resolve(CURRENT_PATH, `./src/pages${input_path}`)
 			let entryPath 	= utils.join(file_path, '.entry.js')
 			let vuePath 	= utils.join(file_path, '.vue')
 			let configPath 	= utils.join(file_path, '.json')
@@ -140,8 +157,8 @@ var funs = {
 		const chooseTemplate = ()=>{
 			return new Promise((resolve, reject) => {
 				let askTemplateQuestion = ()=>{
-						let template_list = fs.readdirSync(template_folder_path).filter(path=>{
-							return !/^package\.json$/.test(path)
+						let template_list = fs.readdirSync(template_folder_path).filter(template_path=>{
+							return !/^package\.json$/.test(template_path)
 						})
 						let questions = {
 						    type: 'list',
@@ -198,7 +215,7 @@ var funs = {
 
 		const create = ()=>{
 			return new Promise((resolve, reject) => {
-				let parents = path.relative(current_path, options.entryPath).replace('src/pages','').split('/').length
+				let parents = path.relative(CURRENT_PATH, options.entryPath).replace('src/pages','').split('/').length
 				if(!parents){
 					parents = './'
 				}else{
@@ -257,7 +274,7 @@ var funs = {
 	},
 
 	askIfStartDev: function(){
-		var questions = [{
+		let questions = [{
 		    type: 'confirm',
 		    name: 'startDev',
 		    message:'是否启动开发服务器'
@@ -302,40 +319,35 @@ var funs = {
 
 	// 重建全部入口文件
 	reCreateEntry(){
-		let configs          = glob.sync(path.resolve(current_path, "./src/pages/**/*.json"))
-		let entrys           = glob.sync(path.resolve(current_path, "./src/pages/**/*.entry.js"))
-		let options			 = {}
-		let entryName        = ''
-		let entryPath 	     = ''
-		let entryFileContent = ''
-		let entry_template   = ''
-		let parents          = ''
+		let configs         = glob.sync(path.resolve(CURRENT_PATH, "./src/pages/**/*.json"));
 
 		configs.forEach(config=>{
-			template  			= JSON.parse(fs.readFileSync(config, 'utf8').toString()).template
+			config 			= path.resolve(CURRENT_PATH, config);
 
-			parents         	= config.replace('./src/pages/','').substr(1).split('/').length
-			
-			parents         	= parents?'../'.repeat(parents):'./'
-			
-			entryName       	= config.substr(config.lastIndexOf('/')+1)
-			entryName       	= entryName.substring(0,entryName.indexOf('.'))
+			let template  	= JSON.parse(fs.readFileSync(config, 'utf8').toString()).template
 
-			entryPath   		= path.resolve(config, '..', utils.join(entryName, '.entry.js'))
+			let entryPath   = config.replace('.json', '.entry.js');
+			let entryName   = config.split('/').slice(-1)[0].replace('.json','');
 			
-			template_entryPath	= path.resolve(template_folder_path, `${template}/template.entry.js`)
-			
-			options 			= {
-				template:template,
-				entryPath:entryPath
+			let parents 	= path.relative(CURRENT_PATH, config).replace('src/pages','').split('/').length
+		
+			if(!parents){
+				parents     = './'
+			}else{
+				parents 	= '../'.repeat(parents)
 			}
 
-			entryFileContent = fs.readFileSync(template_entryPath, 'utf8').toString().replace(/\[page_name\]/gi,entryName).replace(/{parents}/gi,parents)
+			let base_url = `${parents}node_modules/qbs-template/templates/${template}`
+			// logger.log(fs.readFileSync(path.resolve(template_folder_path, `${template}/template.entry.js`), 'utf8').toString());
 			
+			let entryFileContent = fs.readFileSync(path.resolve(template_folder_path, `${template}/template.entry.js`), 'utf8').toString()
+				.replace(/\[page_name\]/gi,entryName)
+				.replace(/\[base_url\]/gi,base_url)
+
 			fs.writeFileSync(entryPath,entryFileContent)
 		})
-		logger.log('重建完成 ！ ')
-		funs.askIfStartDev()
+		logger.success('\n重建完成 ！\n')
+		initAsk()
 	},
 
 	// 提交代码
@@ -375,15 +387,15 @@ var funs = {
 	// 组合模板文件生成html，使用本地开发服务器路径
 	createHTML(){
 		let glob   = require("glob")
-		let configs = glob.sync(path.resolve(current_path, "./src/pages/**/*.json"))
-		let entrys = glob.sync(path.resolve(current_path, "./src/pages/**/*.entry.js"))
+		let configs = glob.sync(path.resolve(CURRENT_PATH, "./src/pages/**/*.json"))
+		let entrys = glob.sync(path.resolve(CURRENT_PATH, "./src/pages/**/*.entry.js"))
 		let tasks  = configs.map(config=>{
 			return new Promise((resolve, reject) => {
 				let scripts
 
 				let savePath =  config.replace('src/pages/','dist/').replace('.json','.html')
 				
-				let	jsFile   = path.relative(current_path, config).replace('src/pages/','').replace('.json','.js')
+				let	jsFile   = path.relative(CURRENT_PATH, config).replace('src/pages/','').replace('.json','.js')
 					scripts  = `
 						<script src="http://localhost:9876/static/libs/dist/libs.js" type="text/javascript"></script>
 						<script src='http://localhost:9876/common.js'></script>
@@ -413,28 +425,39 @@ var funs = {
 
 
 const MENU = [
-	{text:'安装依赖包',fun:funs.installDep},
-	{text:'启动开发服务器',fun:funs.startDev},
-	{text:'新建页面',fun:funs.createRouter},
-	{text:'使用调试模式（使用本地js文件,接口读取后端数据）',fun:funs.createHTML},
-	{text:'编译全部',fun:funs.build},
-	{text:'编译单个文件',fun:funs.buildOne},
-	{text:'重建全部入口文件',fun:funs.reCreateEntry},
-	// {text:'提交代码',fun:funs.submit}
-	{text:'手动更新模板库',fun:funs.manuallyUpdateTemplateRepo},
+	{text:'1. 安装依赖包',fun:funs.installDep},
+	{text:'2. 更新依赖包',fun:funs.updateDep},
+	
+	{text:'3. 新建页面',fun:funs.createRouter},
+	{text:'4. 启动开发服务器',fun:funs.startDev},
+	{text:'5. 使用调试模式（使用本地js文件,接口读取后端数据）',fun:funs.createHTML},
+	
+	{text:'6. 编译全部',fun:funs.build},
+	
+	{text:'7. 编译单个文件',fun:funs.buildOne},
+	
+	{text:'8. 重建全部入口文件',fun:funs.reCreateEntry},
+	
+	{text:'9. 手动更新模板库',fun:funs.manuallyUpdateTemplateRepo},
+
+	{text:'0. 回到初始菜单',fun:initAsk}
 ]
 
+function getFileContent(path){
+	if(!path) return;
+	return fs.readFileSync(path, 'utf8').toString();
+}
 
-const initAsk = (menus)=>{
+function initAsk(menus){
 	menus = menus || MENU.slice(0)
 
 	inquirer.prompt([{
 		type: 'list',
 		name: 'menu',
-		message: 'QBS 命令行工具。',
+		message: 'QBS 命令行工具，当前版本' + utils.getVersion(),
 		choices: menus.map(i=>i.text)
 	}]).then(function(answers) {
-		var fun = menus.find(i=>i.text==answers.menu).fun
+		let fun = menus.find(i=>i.text==answers.menu).fun
 		if(fun){
 			fun()
 		}else{
@@ -443,4 +466,18 @@ const initAsk = (menus)=>{
 	})
 }
 
-initAsk()
+function updateQbs(){	
+	logger.success(`发现新版本，更新中...\n`);
+	let cmd	= spawn('qbs', ['upgrade'])
+	cmd.on('exit', (err)=>{
+		if(err){
+			logger.warn(err)
+			logger.warn('qbs版本更新失败，使用本地安装版本\n')
+		}else{
+			logger.success('更新版本完毕\n')
+		}
+		initAsk()
+	})
+}
+
+utils.isLatestVersion().then(updateQbs).catch(initAsk);
