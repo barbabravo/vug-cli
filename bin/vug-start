@@ -15,7 +15,7 @@ const utils				= require('../lib/utils')
 
 const CURRENT_PATH 		= process.cwd()
 
-const template_folder_path   	= path.join(CURRENT_PATH, 'node_modules/vug-template/templates')
+const template_folder_path   	= path.join(CURRENT_PATH, 'node_modules/vug-templates/templates')
 const template_git_path   		= CONSTANTS.BASE_TEMPLATE_GIT_PATH
 
 // console.log(template_folder_path)
@@ -222,7 +222,7 @@ const funs = {
 					parents = '../'.repeat(parents)
 				}
 
-				let base_url = `${parents}node_modules/vug-template/templates/${options.template}`
+				let base_url = `${parents}node_modules/vug-templates/templates/${options.template}`
 
 				let entryPath       = options.entryPath
 				let vuePath         = options.vuePath
@@ -337,7 +337,7 @@ const funs = {
 				parents 	= '../'.repeat(parents)
 			}
 
-			let base_url = `${parents}node_modules/vug-template/templates/${template}`
+			let base_url = `${parents}node_modules/vug-templates/templates/${template}`
 			// logger.log(fs.readFileSync(path.resolve(template_folder_path, `${template}/template.entry.js`), 'utf8').toString());
 			
 			let entryFileContent = fs.readFileSync(path.resolve(template_folder_path, `${template}/template.entry.js`), 'utf8').toString()
