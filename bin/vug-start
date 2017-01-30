@@ -422,27 +422,6 @@ const funs = {
 	}
 }
 
-
-
-const MENU = [
-	{text:'1. 安装依赖包',fun:funs.installDep},
-	{text:'2. 更新依赖包',fun:funs.updateDep},
-	
-	{text:'3. 新建页面',fun:funs.createRouter},
-	{text:'4. 启动开发服务器',fun:funs.startDev},
-	{text:'5. 使用调试模式（使用本地js文件,接口读取后端数据）',fun:funs.createHTML},
-	
-	{text:'6. 编译全部',fun:funs.build},
-	
-	{text:'7. 编译单个文件',fun:funs.buildOne},
-	
-	{text:'8. 重建全部入口文件',fun:funs.reCreateEntry},
-	
-	{text:'9. 手动更新模板库',fun:funs.manuallyUpdateTemplateRepo},
-
-	{text:'0. 回到初始菜单',fun:initAsk}
-]
-
 function getFileContent(path){
 	if(!path) return;
 	return fs.readFileSync(path, 'utf8').toString();
@@ -466,7 +445,7 @@ function initAsk(menus){
 	})
 }
 
-function updateVug(){	
+function upgrade(){
 	logger.success(`发现新版本，更新中...\n`);
 	let cmd	= spawn('vug', ['upgrade'])
 	cmd.on('exit', (err)=>{
@@ -480,4 +459,25 @@ function updateVug(){
 	})
 }
 
-utils.isLatestVersion().then(updateVug).catch(initAsk);
+
+const MENU = [
+	{text:'1. 安装依赖包',fun:funs.installDep},
+	{text:'2. 更新依赖包',fun:funs.updateDep},
+	
+	{text:'3. 新建页面',fun:funs.createRouter},
+	{text:'4. 启动开发服务器',fun:funs.startDev},
+	{text:'5. 使用调试模式（使用本地js文件,接口读取后端数据）',fun:funs.createHTML},
+	
+	{text:'6. 编译全部',fun:funs.build},
+	
+	{text:'7. 编译单个文件',fun:funs.buildOne},
+	
+	{text:'8. 重建全部入口文件',fun:funs.reCreateEntry},
+	
+	{text:'9. 手动更新模板库',fun:funs.manuallyUpdateTemplateRepo},
+
+	{text:'0. 回到初始菜单',fun:initAsk}
+]
+
+
+utils.isLatestVersion().then(upgrade).catch(initAsk);
