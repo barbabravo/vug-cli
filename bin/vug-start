@@ -15,7 +15,7 @@ const utils				= require('../lib/utils')
 
 const CURRENT_PATH 		= process.cwd()
 
-const template_folder_path   	= path.join(CURRENT_PATH, 'node_modules/qbs-template/templates')
+const template_folder_path   	= path.join(CURRENT_PATH, 'node_modules/vug-template/templates')
 const template_git_path   		= CONSTANTS.BASE_TEMPLATE_GIT_PATH
 
 // console.log(template_folder_path)
@@ -222,7 +222,7 @@ const funs = {
 					parents = '../'.repeat(parents)
 				}
 
-				let base_url = `${parents}node_modules/qbs-template/templates/${options.template}`
+				let base_url = `${parents}node_modules/vug-template/templates/${options.template}`
 
 				let entryPath       = options.entryPath
 				let vuePath         = options.vuePath
@@ -337,7 +337,7 @@ const funs = {
 				parents 	= '../'.repeat(parents)
 			}
 
-			let base_url = `${parents}node_modules/qbs-template/templates/${template}`
+			let base_url = `${parents}node_modules/vug-template/templates/${template}`
 			// logger.log(fs.readFileSync(path.resolve(template_folder_path, `${template}/template.entry.js`), 'utf8').toString());
 			
 			let entryFileContent = fs.readFileSync(path.resolve(template_folder_path, `${template}/template.entry.js`), 'utf8').toString()
@@ -454,7 +454,7 @@ function initAsk(menus){
 	inquirer.prompt([{
 		type: 'list',
 		name: 'menu',
-		message: 'QBS 命令行工具，当前版本' + utils.getVersion(),
+		message: '命令行工具，当前版本' + utils.getVersion(),
 		choices: menus.map(i=>i.text)
 	}]).then(function(answers) {
 		let fun = menus.find(i=>i.text==answers.menu).fun
@@ -466,13 +466,13 @@ function initAsk(menus){
 	})
 }
 
-function updateQbs(){	
+function updateVug(){	
 	logger.success(`发现新版本，更新中...\n`);
-	let cmd	= spawn('qbs', ['upgrade'])
+	let cmd	= spawn('vug', ['upgrade'])
 	cmd.on('exit', (err)=>{
 		if(err){
 			logger.warn(err)
-			logger.warn('qbs版本更新失败，使用本地安装版本\n')
+			logger.warn('vug版本更新失败，使用本地安装版本\n')
 		}else{
 			logger.success('更新版本完毕\n')
 		}
@@ -480,4 +480,4 @@ function updateQbs(){
 	})
 }
 
-utils.isLatestVersion().then(updateQbs).catch(initAsk);
+utils.isLatestVersion().then(updateVug).catch(initAsk);

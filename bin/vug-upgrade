@@ -19,7 +19,7 @@ run();
 function run() {
     var update      = spawn('npm', ['install', '-g', CONSTANTS.BASE_GIT_PATH])
 
-    var spinner = ora('正在更新QBS，请等待...')
+    var spinner = ora('正在更新vug，请等待...')
     spinner.start()
 
     update.on('close', code => {

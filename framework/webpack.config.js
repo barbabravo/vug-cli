@@ -19,7 +19,7 @@ var configs		   = glob.sync("./src/pages/**/*.json");
 
 var entrys		   = glob.sync("./src/pages/**/*.entry.js");
 
-var template_path  = './node_modules/qbs-template/templates'
+var template_path  = './node_modules/vug-template/templates'
 
 var webpackEntrys  = {};
 var webpackPlugins = [];
