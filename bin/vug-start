@@ -61,7 +61,7 @@ const funs = {
 			npm.stderr.on('close', (err)=>{
 				spinner.stop()
 				if(err){
-					logger.fatal(`拉取模板库${template_git_path}失败，请检查`)
+					logger.fatal(`拉取模板库${template_git_path}失败，请检查\n`)
 					reject()
 				}else{
 					logger.success('更新完毕\n')
@@ -75,7 +75,7 @@ const funs = {
 			let template_list = fs.readdirSync(template_folder_path).filter(path=>{
 				return !/^package\.json$/.test(path)
 			})
-			logger.log('当前可用模板包括：')
+			logger.log('当前可用模板包括：\n')
 			template_list.map((template)=>{
 				logger.success(`${template}`);
 			})
@@ -206,7 +206,7 @@ const funs = {
 					if(answers.isDo){
 						resolve(options)
 					}else{
-						reject('文件创建终止 ！')
+						reject('文件创建终止 ！\n')
 					}
 				})
 
@@ -261,7 +261,7 @@ const funs = {
 			.then(confirm)
 			.then(create)
 			.then(function(){
-				logger.success('\n文件已生成。\n')
+				logger.success('文件已生成。\n')
 				initAsk()
 			})
 			.catch(e=>logger.fatal(e))
@@ -291,13 +291,13 @@ const funs = {
 	build:function(){
 		let d = Date.now()
 		let webpack = spawn('webpack',['-build'])
-		let spinner = ora('正在编译中,请稍候...')
+		let spinner = ora('正在编译中,请稍候...\n')
 		spinner.start()
 
 		webpack.on('close',function(code){
 			spinner.stop()
 			if(code == 0){
-				logger.log('编译完成 ！' + ('耗时：' + ( (Date.now()-d))/1000 )+'秒' ) 
+				logger.log('编译完成 ！' + ('耗时：' + ( (Date.now()-d))/1000 )+'秒\n' ) 
 				
 				let questions = [{
 					type: 'confirm',
@@ -312,7 +312,7 @@ const funs = {
 					}
 				})
 			}else{
-				logger.fatal(`编译错误: ${code}`)
+				logger.fatal(`编译错误: ${code}\n`)
 			}
 		})
 	},
@@ -346,7 +346,7 @@ const funs = {
 
 			fs.writeFileSync(entryPath,entryFileContent)
 		})
-		logger.success('\n重建完成 ！\n')
+		logger.success('重建完成 ！\n')
 		initAsk()
 	},
 
@@ -357,7 +357,7 @@ const funs = {
 			let questions = [{
 			    type: 'confirm',
 			    name: 'isDo',
-			    message:'\n确定提交以上文件吗？'
+			    message:'确定提交以上文件吗？\n'
 			  }
 			]
 			inquirer.prompt(questions).then(function (answers) {
@@ -376,7 +376,7 @@ const funs = {
 					]
 					inquirer.prompt(questions).then(function (answers) {
 						require('child_process').exec(`git add -A .;  git commit -m '${answers.des}';  git push`).on('exit',function(){
-							logger.log('提交完成！')
+							logger.log('提交完成！\n')
 						})
 					})
 				}
@@ -416,7 +416,7 @@ const funs = {
 			})
 		})
 		Promise.all(tasks).then(()=>{
-			logger.log('全部 html 已生成，注意：发布使用 编译 功能。')
+			logger.log('全部 html 已生成，注意：发布使用 编译 功能。\n')
 			funs.askIfStartDev()
 		})
 	}
