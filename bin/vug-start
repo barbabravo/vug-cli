@@ -433,7 +433,7 @@ function initAsk(menus){
 	inquirer.prompt([{
 		type: 'list',
 		name: 'menu',
-		message: '命令行工具，当前版本' + utils.getVersion(),
+		message: '命令行工具，当前版本' + utils.getVersion() + '\n',
 		choices: menus.map(i=>i.text)
 	}]).then(function(answers) {
 		let fun = menus.find(i=>i.text==answers.menu).fun
