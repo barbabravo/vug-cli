@@ -375,7 +375,7 @@ const funs = {
 					  }
 					]
 					inquirer.prompt(questions).then(function (answers) {
-						require('child_process').exec(`git add -A .  git commit -m '${answers.des}'  git push`).on('exit',function(){
+						require('child_process').exec(`git add -A .;  git commit -m '${answers.des}';  git push`).on('exit',function(){
 							logger.log('提交完成！')
 						})
 					})
