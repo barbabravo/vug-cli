@@ -107,17 +107,21 @@ var webpack_config = {
 		filename: '[name].js',
 		path: path.join(__dirname, "dist"),
 	},
-
-	externals: {
-	    'vue': 'Vue'
-	},
 	
 	module: {
 		loaders:[
-			{test: /\.js[x]?$/, exclude: /node_modules/, loader: 'babel-loader?presets[]=es2015'},
+			{test: /\.js[x]?$/, exclude: /node_modules/, loader: 'babel'},
 			{test: /\.vue$/, loader: 'vue'},
 			{test: /\.less$/, loader: 'style!css!less'}
 		]
+	},
+	babel:{
+		presets:['es2015']
+	},
+	resolve: {
+	  alias: {
+	    'vue$': 'vue/dist/vue.common.js'
+	  }
 	},
   	plugins:webpackPlugins,
 
