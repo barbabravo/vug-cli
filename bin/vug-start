@@ -290,12 +290,12 @@ const funs = {
 	// 编译
 	build:function(){
 		let d = Date.now()
-		let spinner = ora('正在编译中,请稍候...\n')
-		spinner.start()
+		let spinner2 = ora('正在编译中,请稍候...\n')
+		spinner2.start()
 
 		let webpack = spawn('webpack',['-build'])
 		webpack.on('close',function(code){
-			spinner.stop()
+			spinner2.stop()
 			if(code == 0){
 				logger.log('编译完成 ！' + ('耗时：' + ( (Date.now()-d))/1000 )+'秒\n' ) 
 				
