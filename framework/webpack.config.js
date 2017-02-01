@@ -43,7 +43,6 @@ CreateHtml.prototype.apply = function(compiler) {
 			}
 			jsFile   = config.replace('./src/pages/','').replace('.json','.js');
 			scripts  = `
-					<script src="${base_url}/static/libs/dist/libs.min.js" type="text/javascript"></script>
 					<script src="${base_url}${dist_base_url}/common.js"></script>
 					<script src="${base_url}${dist_base_url}/${jsFile}""></script>
 				</body>

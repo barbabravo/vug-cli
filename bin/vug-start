@@ -338,7 +338,6 @@ const funs = {
 			}
 
 			let base_url = `${parents}node_modules/vug-templates/templates/${template}`
-			// logger.log(fs.readFileSync(path.resolve(template_folder_path, `${template}/template.entry.js`), 'utf8').toString());
 			
 			let entryFileContent = fs.readFileSync(path.resolve(template_folder_path, `${template}/template.entry.js`), 'utf8').toString()
 				.replace(/\[page_name\]/gi,entryName)
@@ -397,7 +396,6 @@ const funs = {
 				
 				let	jsFile   = path.relative(CURRENT_PATH, config).replace('src/pages/','').replace('.json','.js')
 					scripts  = `
-						<script src="http://localhost:9876/static/libs/dist/libs.js" type="text/javascript"></script>
 						<script src='http://localhost:9876/common.js'></script>
 						<script src='http://localhost:9876/${jsFile}'></script>
 					</body>
@@ -440,7 +438,7 @@ function initAsk(menus){
 		if(fun){
 			fun()
 		}else{
-			logger.log('功能还未实现，请联系前端工程师@张彪')
+			logger.log('功能还未实现，请联系@张彪')
 		}
 	})
 }
