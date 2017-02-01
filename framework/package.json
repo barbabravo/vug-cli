@@ -16,7 +16,7 @@
     "less-loader": "^2.2.3",
     "vug-extensions": "git+https://github.com/bluers/vug-extensions.git",
     "vug-utils": "git+https://github.com/bluers/vug-utils.git",
-    "vug-template": "git+https://github.com/bluers/vug-template.git",
+    "vug-templates": "git+https://github.com/bluers/vug-templates.git",
     "script-loader": "^0.7.0",
     "style-loader": "^0.13.1",
     "vue": "^1.0.25",
