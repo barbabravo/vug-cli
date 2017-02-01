@@ -405,7 +405,7 @@ const funs = {
 				let template = JSON.parse(rf.readFileSync(config).toString()).template
 				let data     = rf.readFileSync(path.resolve(template_folder_path, `${template}/layout.html`), 'utf-8')
 
-				let fileContents = data.replace(/<!--buildjs-->(.|\n)*/gi,scripts)
+				let fileContents = data.replace(/<!--placeholder-->(.|\n)*/gi,scripts)
 				spawn('mkdir', ['-p',savePath.substring(0,savePath.lastIndexOf('/'))  ]).on('exit',()=>{
 					rf.writeFileSync(savePath,fileContents)
 					resolve()
@@ -464,7 +464,7 @@ const MENU = [
 	
 	{text:'3. 新建页面',fun:funs.createRouter},
 	{text:'4. 启动开发服务器',fun:funs.startDev},
-	{text:'5. 使用调试模式（使用本地js文件,接口读取后端数据）',fun:funs.createHTML},
+	{text:'5. 使用调试模式（仅修改js文件host为locahost）',fun:funs.createHTML},
 	
 	{text:'6. 编译全部',fun:funs.build},
 	

@@ -51,7 +51,7 @@ CreateHtml.prototype.apply = function(compiler) {
 			var rf    = require("fs");  
 			var template = JSON.parse(rf.readFileSync(config).toString()).template;
 			var data  = rf.readFileSync(path.join(template_path, template, "/layout.html"),"utf-8");  
-			var fileContents = data.replace(/<!--buildjs-->(.|\n)*/gi,scripts);
+			var fileContents = data.replace(/<!--placeholder-->(.|\n)*/gi,scripts);
 
 			compilation.assets[savePath] = {
 		      source: function() {
@@ -67,7 +67,6 @@ CreateHtml.prototype.apply = function(compiler) {
 };
  
 (function(){
-
 	var entryName = '';
 	var obj 	  = null;
 	entrys.forEach(entry=>{
