@@ -1,7 +1,7 @@
 # 使用以下方法安装
 
 ```
-npm install -g webpack webpack-dev-server git+ssh://git@git.2b6.me:vug/vug-cli.git
+npm install -g webpack webpack-dev-server https://github.com/bluers/vug-cli.git
 ```
 
 # API
