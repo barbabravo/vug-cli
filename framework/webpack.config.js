@@ -1,3 +1,7 @@
+//发布基础地址
+const DIST_BASE_URL = '/fe/dist';
+
+
 var webpack           = require('webpack');
 var OpenBrowserPlugin = require('open-browser-webpack-plugin');
 var CleanWebpackPlugin= require('clean-webpack-plugin');
@@ -39,7 +43,7 @@ CreateHtml.prototype.apply = function(compiler) {
 				dist_base_url = ''
 			}else{
 				base_url = ''
-				dist_base_url = '/fe/dist';
+				dist_base_url = DIST_BASE_URL;
 			}
 			jsFile   = config.replace('./src/pages/','').replace('.json','.js');
 			scripts  = `
