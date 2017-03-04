@@ -2,42 +2,42 @@
 const DIST_BASE_URL = '/fe/dist';
 
 
-var webpack           = require('webpack');
-var OpenBrowserPlugin = require('open-browser-webpack-plugin');
-var CleanWebpackPlugin= require('clean-webpack-plugin');
+const webpack           = require('webpack');
+const OpenBrowserPlugin = require('open-browser-webpack-plugin');
+const CleanWebpackPlugin= require('clean-webpack-plugin');
 
-var log 			  = console.log;
-var spawn  			  = require('child_process').spawn;
-var isDebug			  = true;
+const log 			  = console.log;
+const spawn  			  = require('child_process').spawn;
+const isDebug			  = true;
 
-var arguments = process.argv.splice(2).join(' ');
+const arguments = process.argv.splice(2).join(' ');
 if(arguments.indexOf('-build') != -1){
 	isDebug = false;
 }
 
 
-var path           = require("path");
-var glob           = require("glob");
+const path           = require("path");
+const glob           = require("glob");
 
-var configs		   = glob.sync("./src/pages/**/*.json");
+const configs		   = glob.sync("./src/pages/**/*.json");
 
-var entrys		   = glob.sync("./src/pages/**/*.entry.js");
+const entrys		   = glob.sync("./src/pages/**/*.entry.js");
 
-var template_path  = './node_modules/vug-templates/templates'
+const template_path  = './node_modules/vug-templates/templates'
 
-var webpackEntrys  = {};
-var webpackPlugins = [];
+const webpackEntrys  = {};
+const webpackPlugins = [];
 
 // 动态创建 html 文件，不用 html 插件，提高编译速度
 function CreateHtml() {}
 CreateHtml.prototype.apply = function(compiler) {
   	compiler.plugin("emit", function(compilation, callback) { 
-		var tasks = [];
+		const tasks = [];
 		configs.forEach(config=>{
-			var scripts;
-			var jsFile;
-			var savePath =  config.replace('./src/pages/','').replace('.json','.html');
-			var base_url, dist_base_url;
+			const scripts;
+			const jsFile;
+			const savePath =  config.replace('./src/pages/','').replace('.json','.html');
+			const base_url, dist_base_url;
 			if(isDebug){
 				base_url = 'http://localhost:9876';
 				dist_base_url = ''
@@ -52,10 +52,10 @@ CreateHtml.prototype.apply = function(compiler) {
 				</body>
 				</html>`;
 
-			var rf    = require("fs");  
-			var template = JSON.parse(rf.readFileSync(config).toString()).template;
-			var data  = rf.readFileSync(path.join(template_path, template, "/layout.html"),"utf-8");  
-			var fileContents = data.replace(/<!--placeholder-->(.|\n)*/gi,scripts);
+			const rf    = require("fs");  
+			const template = JSON.parse(rf.readFileSync(config).toString()).template;
+			const data  = rf.readFileSync(path.join(template_path, template, "/layout.html"),"utf-8");  
+			const fileContents = data.replace(/<!--placeholder-->(.|\n)*/gi,scripts);
 
 			compilation.assets[savePath] = {
 		      source: function() {
@@ -71,8 +71,8 @@ CreateHtml.prototype.apply = function(compiler) {
 };
  
 (function(){
-	var entryName = '';
-	var obj 	  = null;
+	const entryName = '';
+	const obj 	  = null;
 	entrys.forEach(entry=>{
 		entryName = entry.replace('./src/pages/','').replace('.entry.js','');
 		webpackEntrys[entryName] = entry;
@@ -104,7 +104,7 @@ if(!isDebug){
 }
 
 
-var webpack_config = {
+const webpack_config = {
 	entry:webpackEntrys,
 
 	output: {
@@ -116,7 +116,12 @@ var webpack_config = {
 		loaders:[
 			{test: /\.js[x]?$/, exclude: /node_modules/, loader: 'babel'},
 			{test: /\.vue$/, loader: 'vue'},
-			{test: /\.less$/, loader: 'style!css!less'}
+			{test: /\.less$/, loader: 'style!css!less'},
+			{test: /\.css$/, loader: 'style-loader!css-loader'},
+      {
+      	test: /\.(png|jpg|gif|eot|svg|ttf|woff|woff2)/,
+      	loader: 'url-loader?limit=500&name=' + (isDebug?'../[name].[hash].[ext]':'[name].[hash].[ext]&publicPath=../assets/&outputPath=./assets/')
+      },
 		]
 	},
 	babel:{
