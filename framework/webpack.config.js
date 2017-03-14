@@ -10,8 +10,8 @@ const log 			  = console.log;
 const spawn  			  = require('child_process').spawn;
 const isDebug			  = true;
 
-const arguments = process.argv.splice(2).join(' ');
-if(arguments.indexOf('-build') != -1){
+const argvs = process.argv.splice(2).join(' ');
+if(argvs.indexOf('-build') != -1){
 	isDebug = false;
 }
 
