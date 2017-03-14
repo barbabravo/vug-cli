@@ -23,14 +23,18 @@ const questions = {
     default: 'fe'
 }
 
-utils.isLatestVersion().then(()=>{
+function ask(){
     inquirer.prompt(questions).then(answers => {
         if (answers.ok) {
             _global.proj_name = answers.ok;
             run();
         }
     })
-})
+}
+
+utils.isLatestVersion().then(()=>{
+    ask();
+}).catch(ask)
 
 function run() {
     exec('ls | grep ^' + _global.proj_name + '$', (error, stdout, stderr) => {
