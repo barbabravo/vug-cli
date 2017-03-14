@@ -22,11 +22,14 @@ const questions = {
     name: 'ok',
     default: 'fe'
 }
-inquirer.prompt(questions).then(answers => {
-    if (answers.ok) {
-        _global.proj_name = answers.ok;
-        run();
-    }
+
+utils.isLatestVersion().then(()=>{
+    inquirer.prompt(questions).then(answers => {
+        if (answers.ok) {
+            _global.proj_name = answers.ok;
+            run();
+        }
+    })
 })
 
 function run() {
