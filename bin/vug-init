@@ -5,7 +5,7 @@ const ora       = require('ora');
 const inquirer  = require('inquirer')
 
 const logger    = require('../lib/logger.js');
-
+const utils     = require('../lib/utils.js');
 const CONSTANTS = require('../lib/constants.js');
 
 const spawn     = require('child_process').spawn;
