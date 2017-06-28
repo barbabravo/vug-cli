@@ -1,13 +1,12 @@
 //发布基础地址
-var DIST_BASE_URL = '/fe/dist';
-
-
+var DIST_BASE_URL = '/dist';
 var webpack           = require('webpack');
 var OpenBrowserPlugin = require('open-browser-webpack-plugin');
 var CleanWebpackPlugin= require('clean-webpack-plugin');
 
 var log 			  = console.log;
 var spawn  			  = require('child_process').spawn;
+
 var isDebug			  = true;
 
 var arguments = process.argv.splice(2).join(' ');
@@ -17,16 +16,32 @@ if(arguments.indexOf('-build') != -1){
 
 
 var path           = require("path");
+var rf    		   = require("fs");
 var glob           = require("glob");
+var _              = require("lodash");
+var crypto 		   = require('crypto');
 
 var configs		   = glob.sync("./src/pages/**/*.json");
 
 var entrys		   = glob.sync("./src/pages/**/*.entry.js");
 
-var template_path  = './node_modules/vug-templates/templates'
+var template_path  = './node_modules/vug-templates/templates';
+
+var CURRENT_PATH 		= process.cwd();
 
 var webpackEntrys  = {};
-var webpackPlugins = [];
+var webpackPlugins = [
+	new webpack.ProvidePlugin({
+		// $: 'jquery',
+		// _: 'lodash'
+	}),
+	new webpack.DefinePlugin({
+	  'process.env': {
+	  	NODE_ENV: '"development"',
+	    // NODE_ENV: '"production"'
+	  }
+	})
+];
 
 // 动态创建 html 文件，不用 html 插件，提高编译速度
 function CreateHtml() {}
@@ -46,15 +61,65 @@ CreateHtml.prototype.apply = function(compiler) {
 				dist_base_url = DIST_BASE_URL;
 			}
 			jsFile   = config.replace('./src/pages/','').replace('.json','.js');
+
+			// name
+			// hash
+			// renderedHash
+			// console.log(compilation.chunks)
+			var commonFile = compilation.chunks[compilation.chunks.length-1].files[0];
+			var jsFile_hash = _.result(_.find(compilation.chunks, function(chr) {
+								  return chr.name == jsFile.substr(0,jsFile.length-3);
+								}), 'renderedHash');
+
+			jsFile = jsFile.substr(0,jsFile.length-3)+'.'+jsFile_hash+'.js';
+
 			scripts  = `
-					<script src="${base_url}${dist_base_url}/common.js"></script>
-					<script src="${base_url}${dist_base_url}/${jsFile}""></script>
+					<script src="${base_url}${dist_base_url}/${commonFile}"></script>
+					<script src="${base_url}${dist_base_url}/${jsFile}"></script>
 				</body>
 				</html>`;
 
-			var rf    = require("fs");  
-			var template = JSON.parse(rf.readFileSync(config).toString()).template;
-			var data  = rf.readFileSync(path.join(template_path, template, "/layout.html"),"utf-8");  
+			 
+			var json_content = JSON.parse(rf.readFileSync(config).toString());
+
+			var template = json_content['template'];
+			eval('var header_placeholder_path = json_content["head-placeholder"]?json_content["head-placeholder"]:"";');
+			eval('var dom_placeholder_path = json_content["dom-placeholder"]?json_content["dom-placeholder"]:"";');
+			
+			// console.log("header_placeholder_path:",header_placeholder_path);
+			// console.log("dom_placeholder_path:",dom_placeholder_path);
+
+
+			header_placeholder_path = _.isArray(header_placeholder_path)?header_placeholder_path:[header_placeholder_path];
+			dom_placeholder_path = _.isArray(dom_placeholder_path)?dom_placeholder_path:[dom_placeholder_path];
+
+			var header_data = "";
+			var dompreloader_data = "";
+
+			header_placeholder_path.forEach(function(file_path){
+				if(!file_path){
+					return;
+				}
+				var page_path = config.replace(/\/[^\/]+?\.json$/gi,'');
+				var file_path = path.resolve(CURRENT_PATH,page_path,file_path);
+				header_data += rf.existsSync(file_path)?rf.readFileSync(file_path, "utf-8"):"";
+			})
+
+			dom_placeholder_path.forEach(function(file_path){
+				if(!file_path){
+					return;
+				}
+				var page_path = config.replace(/\/[^\/]+?\.json$/gi,'');
+				var file_path = path.resolve(CURRENT_PATH,page_path,file_path);
+				dompreloader_data += rf.existsSync(file_path)?rf.readFileSync(file_path, "utf-8"):"";
+			})
+
+			var data  = rf.readFileSync(path.join(template_path, template, "/layout.html"),"utf-8");
+			data = data.replace(/<!--header-->/gi,header_data);
+			data = data.replace(/<!--dompreloader-->/gi,dompreloader_data);
+
+
+
 			var fileContents = data.replace(/<!--placeholder-->(.|\n)*/gi,scripts);
 
 			compilation.assets[savePath] = {
@@ -79,7 +144,11 @@ CreateHtml.prototype.apply = function(compiler) {
 	});
 })();
 
-webpackPlugins.push(new webpack.optimize.CommonsChunkPlugin('common.js'));
+new webpack.optimize.CommonsChunkPlugin({
+      name: 'manifest',
+      chunks: ['app', 'vendor'] // 或者不写这一行，默认全部chunk
+})
+webpackPlugins.push(new webpack.optimize.CommonsChunkPlugin('common.[hash].js'));
 
 webpackPlugins.push(new CreateHtml());
 
@@ -108,7 +177,7 @@ var webpack_config = {
 	entry:webpackEntrys,
 
 	output: {
-		filename: '[name].js',
+		filename:'[name].[chunkhash].js',
 		path: path.join(__dirname, "dist"),
 	},
 	
@@ -129,7 +198,8 @@ var webpack_config = {
 	},
 	resolve: {
 	  alias: {
-	    'vue$': 'vue/dist/vue.common.js'
+	  	// 'jquery':'jquery/dist/jquery.min.js',
+	   //  'vue$': 'vue/dist/vue.common.js'
 	  }
 	},
   	plugins:webpackPlugins,
@@ -139,7 +209,17 @@ var webpack_config = {
 	    hot: true,
 	    inline: true,
 	    progress: true,
-	    port:9876
+	    host:'0.0.0.0',
+	    port:9876,
+	    disableHostCheck: true,
+	    proxy: {
+        '/accountweb/**':{
+          'target': 'http://192.168.11.37:8080/',
+          // pathRewrite:{'^/kaihu' : '/accountweb'},
+          changeOrigin: true,
+          secure: false
+        }
+      },
 	}
 };
 
