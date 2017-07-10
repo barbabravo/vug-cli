@@ -316,6 +316,53 @@ const funs = {
 		})
 	},
 
+	// 编译单个
+	buildOne:function(){
+		let pages_path 	= path.resolve(CURRENT_PATH, `./src/pages`)
+		
+		const choosePagesPath = ()=>{
+			return new Promise((resolve, reject) => {
+				let askPagesPathQuestion = ()=>{
+						let pages_path_list = fs.readdirSync(pages_path).filter(page_path=>{
+							return !/^\..*/.test(page_path)
+						});
+						let questions = {
+						    type: 'list',
+						    name: 'FilePath',
+						    message: '请选择需要编译的目录\n',
+						    choices:pages_path_list
+						}
+						inquirer.prompt(questions).then(function (answers) {
+							resolve(answers.FilePath)
+						})
+				}
+			
+				let exists = fs.existsSync(pages_path)
+				if(exists){
+					askPagesPathQuestion()
+				}else{
+					logger.fatal(`pages文件夹不存在\n`)
+				}
+			})
+		}
+
+		choosePagesPath().then(function(file_path){
+			let d = Date.now()
+			logger.log('正在编译中,请稍候...\n')
+			let webpack = spawn('webpack',['-build',file_path])
+
+			webpack.on('close',function(code){
+				if(code == 0){
+					logger.log('编译完成 ！' + ('耗时：' + ( (Date.now()-d))/1000 )+'秒\n' ) 
+					
+				}else{
+					logger.fatal(`编译错误: ${code}\n`)
+				}
+			})
+			
+		});
+	},
+
 	// 重建全部入口文件
 	reCreateEntry(){
 		let configs         = glob.sync(path.resolve(CURRENT_PATH, "./src/pages/**/*.json"));
@@ -467,7 +514,7 @@ const MENU = [
 	
 	{text:'6. 编译全部',fun:funs.build},
 	
-	{text:'7. 编译单个文件',fun:funs.buildOne},
+	{text:'7. 编译单个文件夹',fun:funs.buildOne},
 	
 	{text:'8. 重建全部入口文件',fun:funs.reCreateEntry},
 	
