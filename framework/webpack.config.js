@@ -3,6 +3,7 @@ var DIST_BASE_URL = '/dist';
 var webpack           = require('webpack');
 var OpenBrowserPlugin = require('open-browser-webpack-plugin');
 var CleanWebpackPlugin= require('clean-webpack-plugin');
+var CopyWebpackPlugin = require('copy-webpack-plugin');
 
 var log               = console.log;
 var spawn             = require('child_process').spawn;
@@ -90,21 +91,28 @@ CreateHtml.prototype.apply = function(compiler) {
 
             
 
-            scripts  = `
+            var json_content = JSON.parse(rf.readFileSync(config).toString());
+            var template = json_content['template'];
+
+            eval('var polyfill = json_content["polyfill"]?json_content["polyfill"]:false;');
+            eval('var header_placeholder_path = json_content["head-placeholder"]?json_content["head-placeholder"]:"";');
+            eval('var dom_placeholder_path = json_content["dom-placeholder"]?json_content["dom-placeholder"]:"";');
+
+            // console.log("header_placeholder_path:",header_placeholder_path);
+            // console.log("dom_placeholder_path:",dom_placeholder_path);
+
+
+            var polyfill_path = `<script src="${base_url}${dist_base_url}/polyfill.min.js"></script>`;
+            // console.log("polyfill:",polyfill)
+            if(!polyfill){
+              polyfill_path = ``;
+            }
+
+            scripts = polyfill_path+`
                     <script src="${base_url}${dist_base_url}/${commonFile}"></script>
                     <script src="${base_url}${dist_base_url}/${jsFile}"></script>
                 </body>
                 </html>`;
-
-             
-            var json_content = JSON.parse(rf.readFileSync(config).toString());
-
-            var template = json_content['template'];
-            eval('var header_placeholder_path = json_content["head-placeholder"]?json_content["head-placeholder"]:"";');
-            eval('var dom_placeholder_path = json_content["dom-placeholder"]?json_content["dom-placeholder"]:"";');
-            
-            // console.log("header_placeholder_path:",header_placeholder_path);
-            // console.log("dom_placeholder_path:",dom_placeholder_path);
 
 
             header_placeholder_path = _.isArray(header_placeholder_path)?header_placeholder_path:[header_placeholder_path];
@@ -206,6 +214,9 @@ if(!isDebug){
     webpackPlugins.push(new webpack.HotModuleReplacementPlugin());
 }
 
+webpackPlugins.push(new CopyWebpackPlugin([
+    { from: 'node_modules/babel-polyfill/dist/polyfill.min.js', to: 'polyfill.min.js'}
+]))
 
 var webpack_config = {
     entry:webpackEntrys,
