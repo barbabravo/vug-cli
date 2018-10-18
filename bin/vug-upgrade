@@ -17,7 +17,7 @@ const spawn     = require('child_process').spawn;
 run();
 
 function run() {
-    var update      = spawn('npm', ['install', '-g', CONSTANTS.BASE_GIT_PATH])
+    var update      = spawn(process.platform==='win32'?'npm.cmd':'npm', ['install', '-g', CONSTANTS.BASE_GIT_PATH])
 
     var spinner = ora('正在更新vug，请等待...')
     spinner.start()
