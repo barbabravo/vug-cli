@@ -25,7 +25,7 @@ const funs = {
 	//安装依赖包
 	installOrUpdateDep:function(flag){
 		let spinner = ora(`正在${flag=='update'?'更新':'安装'}依赖包，可能需要较长时间，请耐心等待...`);
-		let npm		= spawn('npm', [flag]);
+		let npm		= spawn(process.platform==='win32'?'npm.cmd':'npm', [flag]);
 		spinner.start()
 		npm.stdout.on('data',(data)=>{
 			logger.log(data.toString())
@@ -53,7 +53,7 @@ const funs = {
 		return new Promise((resolve,reject)=>{
 			let exist = fs.existsSync(template_folder_path);
 			let spinner = ora('正在拉取模板库...')
-			let npm		= spawn('npm', ['install',template_git_path])
+			let npm		= spawn(process.platform==='win32'?'npm.cmd':'npm', ['install',template_git_path])
 			spinner.start()
 			npm.stdout.on('data',(data)=>{
 				//logger.log(data.toString())
