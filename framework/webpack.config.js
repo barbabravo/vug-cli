@@ -234,7 +234,7 @@ var webpack_config = {
             {test: /\.css$/, loader: 'style-loader!css-loader'},
       {
         test: /\.(png|jpg|gif|eot|svg|ttf|woff|woff2)/,
-        loader: 'url-loader?limit=500&name=' + (isDebug?'../[name].[hash].[ext]':'[name].[hash].[ext]&publicPath=../assets/&outputPath=./assets/')
+        loader: 'file-loader?limit=5000&name=' + (isDebug?'../[name].[hash].[ext]':'[name].[hash].[ext]&publicPath=../assets/&outputPath=./assets/')
       },
         ]
     },

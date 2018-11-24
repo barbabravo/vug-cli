@@ -1,6 +1,6 @@
 {
   "name": "vug-cli",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "vue多页工具",
   "main": "index.js",
   "bin": {
