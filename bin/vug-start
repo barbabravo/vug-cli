@@ -293,7 +293,7 @@ const funs = {
 		let d = Date.now()
 		logger.log('正在编译中,请稍候...\n')
 
-		let webpack = spawn('webpack',['-build'],'--mode','production')
+		let webpack = spawn('webpack',['-build --mode production'])
 		webpack.on('close',function(code){
 			if(code == 0){
 				logger.log('编译完成 ！' + ('耗时：' + ( (Date.now()-d))/1000 )+'秒\n' ) 
