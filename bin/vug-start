@@ -275,7 +275,9 @@ const funs = {
 			let npm		= spawn(process.platform==='win32'?'npm.cmd':'npm', ['run','dev'])
 			spinner.start()
 			npm.stdout.on('data',(data)=>{
-				//logger.log(data.toString())
+				spinner.stop()
+				logger.success('启动成功...\n')
+				logger.log(data.toString())
 			})
 			npm.stderr.on('close', (err)=>{
 				spinner.stop()
