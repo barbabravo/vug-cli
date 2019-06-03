@@ -271,7 +271,7 @@ const funs = {
 
 	// 启动开发服务器
 	startDev:function(){
-		spawn('webpack-dev-server',['--port=9876'], { stdio:'inherit' }) 
+		spawn('webpack-dev-server',['--port=9876']) 
 	},
 
 	askIfStartDev: function(){
