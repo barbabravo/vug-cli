@@ -271,7 +271,17 @@ const funs = {
 
 	// 启动开发服务器
 	startDev:function(){
-		spawn('webpack-dev-server',['--port=9876'], { stdio:'inherit' }) 
+			let npm		= spawn(process.platform==='win32'?'npm.cmd':'npm', ['run','dev'])
+			npm.stdout.on('data',(data)=>{
+				logger.log(data.toString())
+			})
+			npm.stderr.on('close', (err)=>{
+				if(err){
+					logger.fatal(`启动失败`)
+				}else{
+					logger.success('启动成功...\n')
+				}
+			})
 	},
 
 	askIfStartDev: function(){
@@ -293,7 +303,7 @@ const funs = {
 		let d = Date.now()
 		logger.log('正在编译中,请稍候...\n')
 
-		let webpack = spawn('webpack',['-build'])
+		let webpack = spawn('webpack',['-p'])
 		webpack.on('close',function(code){
 			if(code == 0){
 				logger.log('编译完成 ！' + ('耗时：' + ( (Date.now()-d))/1000 )+'秒\n' ) 
@@ -349,7 +359,7 @@ const funs = {
 		choosePagesPath().then(function(file_path){
 			let d = Date.now()
 			logger.log('正在编译中,请稍候...\n')
-			let webpack = spawn('webpack',['-build',file_path])
+			let webpack = spawn('webpack',['-p',file_path])
 
 			webpack.on('close',function(code){
 				if(code == 0){
