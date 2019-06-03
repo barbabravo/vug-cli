@@ -1,7 +1,7 @@
 # 使用以下方法安装
 
 ```
-npm install -g webpack webpack-dev-server https://github.com/bluers/vug-cli.git
+npm install -g webpack@3.6.0 webpack-dev-server@2.9.1 https://github.com/bluers/vug-cli.git
 ```
 
 # API
@@ -13,6 +13,20 @@ vug start	# 执行菜单列表
 vug upgrade # 更新vug工具
 
 ```
+
+# 运行开发服务器
+1. 执行vug-start，选择4，启动开发服务器
+2. 控制台输入
+   ```
+	 npm run dev
+	 ```
+
+# 编译代码
+1. 执行vug-start，选择6，编译全部文件
+2. 控制台输入
+   ```
+	 npm run build
+	 ```
 
 # 注意事项  && 常见问题
 
