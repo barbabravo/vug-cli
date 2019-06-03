@@ -3,19 +3,20 @@ var DIST_BASE_URL = "/dist";
 var webpack = require("webpack");
 var OpenBrowserPlugin = require("open-browser-webpack-plugin");
 var CleanWebpackPlugin = require("clean-webpack-plugin");
-var UglifyJSPlugin = require("uglifyjs-webpack-plugin");
 
 var log = console.log;
 var spawn = require("child_process").spawn;
 
-var isDebug = true;
+// prod
+var isDebug = false;
 
 var arguments = process.argv.splice(2);
 var arguments_str = arguments.join(" ");
 var isBuildOne = arguments[1] ? true : false;
 
-if (arguments_str.indexOf("-build") != -1) {
-  isDebug = false;
+if (arguments_str.indexOf("--port") != -1) {
+  // dev
+  isDebug = true;
 }
 
 var path = require("path");
@@ -181,6 +182,19 @@ CreateHtml.prototype.apply = function(compiler) {
   webpackEntrys.common = ["vue"]; //每个项目各不相同，根本每个项目不同增加或删除要提取的公共部分
 })();
 
+new webpack.optimize.CommonsChunkPlugin({
+  name: "manifest",
+  chunks: ["app", "vendor"] // 或者不写这一行，默认全部chunk
+});
+
+// webpackPlugins.push(new webpack.optimize.CommonsChunkPlugin('common.[hash].js',['common']));
+webpackPlugins.push(
+  new webpack.optimize.CommonsChunkPlugin({
+    name: "common",
+    chunks: ["common"]
+  })
+);
+
 webpackPlugins.push(new CreateHtml());
 
 if (!isDebug) {
@@ -199,6 +213,18 @@ if (!isDebug) {
       })
     );
   }
+  webpackPlugins.push(
+    new webpack.optimize.UglifyJsPlugin({
+      sourceMap: false,
+      parallel: 8,
+      output: {
+        comments: false // remove all comments
+      },
+      compress: {
+        warnings: false
+      }
+    })
+  );
 } else {
   webpackPlugins.push(new OpenBrowserPlugin({ url: "http://localhost:9876" }));
   webpackPlugins.push(new webpack.HotModuleReplacementPlugin());
@@ -216,49 +242,30 @@ var webpack_config = {
     rules: [
       {
         test: /\.vue$/,
-        use: [{ loader: "vue-loader" }]
+        loader: "vue-loader"
       },
       {
         test: /\.js[x]?$/,
         exclude: /node_modules/,
-        use: [{ loader: "babel-loader" }]
+        loader: "babel-loader"
       },
       {
         test: /\.less$/,
-        use: [
-          {
-            loader: "style-loader"
-          },
-          {
-            loader: "css-loader"
-          },
-          {
-            loader: "less-loader"
-          }
-        ]
+        loader: "style-loader!css-loader!less-loader"
       },
       {
         test: /\.css$/,
-        use: [
-          {
-            loader: "style-loader"
-          },
-          {
-            loader: "css-loader"
-          }
-        ]
+        loader: "style-loader!css-loader"
       },
       {
         test: /\.(png|jpg|gif|eot|svg|ttf|woff|woff2)/,
-        use: {
-          loader: "file-loader",
+        loader: "file-loader",
           options: {
             name: isDebug ? "../[name].[hash].[ext]" : "[name].[hash].[ext]",
             limit: 5000, // fonts file size <= 5KB, use 'base64'; else, output svg file
             publicPath: "../assets/",
             outputPath: "./assets/"
           }
-        }
       }
     ]
   },
@@ -267,34 +274,11 @@ var webpack_config = {
       //每个项目各不相同，可自行增加别名
       // 'jquery':'jquery/dist/jquery.min.js',
       vue$: "vue/dist/vue.common.js",
-      "@": path.resolve(__dirname, "src")
+      '@': path.resolve(__dirname, 'src')
     }
   },
   plugins: webpackPlugins,
-  optimization: {
-    splitChunks: {
-      cacheGroups: {
-        commons: {
-          name: "common",
-          chunks: "initial"
-        }
-      }
-    },
-    minimizer: [
-      new UglifyJSPlugin({
-        uglifyOptions: {
-          sourceMap: false,
-          parallel: 8,
-          output: {
-            comments: false
-          },
-          compress: {
-            warnings: false
-          }
-        }
-      })
-    ]
-  },
+
   devServer: {
     historyApiFallback: true,
     hot: true,
@@ -304,9 +288,10 @@ var webpack_config = {
     port: 9876,
     disableHostCheck: true,
     proxy: {
-      "/accountweb/**": {
-        target: "http://192.168.11.37:8080/",
-        // pathRewrite:{'^/kaihu' : '/accountweb'},
+      "/sites/api": {
+        'target': 'url',//测试环境
+        // 'target': 'url',//开发环境
+        // 'target': 'url,//线上环境
         changeOrigin: true,
         secure: false
       }
