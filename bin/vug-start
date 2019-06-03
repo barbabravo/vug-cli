@@ -271,16 +271,11 @@ const funs = {
 
 	// 启动开发服务器
 	startDev:function(){
-		let spinner = ora('正在启动...')
 			let npm		= spawn(process.platform==='win32'?'npm.cmd':'npm', ['run','dev'])
-			spinner.start()
 			npm.stdout.on('data',(data)=>{
-				spinner.stop()
-				logger.success('启动成功...\n')
 				logger.log(data.toString())
 			})
 			npm.stderr.on('close', (err)=>{
-				spinner.stop()
 				if(err){
 					logger.fatal(`启动失败`)
 				}else{
