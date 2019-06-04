@@ -187,14 +187,6 @@ webpackPlugins.push(new webpack.optimize.CommonsChunkPlugin({
   minChunks:2
 }));
 
-// webpackPlugins.push(new webpack.optimize.CommonsChunkPlugin('common.[hash].js',['common']));
-webpackPlugins.push(
-  new webpack.optimize.CommonsChunkPlugin({
-    name: "common",
-    chunks: ["common"]
-  })
-);
-
 webpackPlugins.push(new CreateHtml());
 
 if (!isDebug) {
