@@ -182,10 +182,10 @@ CreateHtml.prototype.apply = function(compiler) {
   webpackEntrys.common = ["vue"]; //每个项目各不相同，根本每个项目不同增加或删除要提取的公共部分
 })();
 
-new webpack.optimize.CommonsChunkPlugin({
-  name: "manifest",
-  chunks: ["app", "vendor"] // 或者不写这一行，默认全部chunk
-});
+webpackPlugins.push(new webpack.optimize.CommonsChunkPlugin({
+  name: 'common',
+  minChunks:2
+}));
 
 // webpackPlugins.push(new webpack.optimize.CommonsChunkPlugin('common.[hash].js',['common']));
 webpackPlugins.push(
