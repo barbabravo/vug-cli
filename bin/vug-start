@@ -304,22 +304,25 @@ const funs = {
 		logger.log('正在编译中,请稍候...\n')
 
 		let webpack = spawn('webpack',['-p'])
+		webpack.stdout.on('data', function(chunk) {
+			console.log(chunk.toString());
+		});
 		webpack.on('close',function(code){
 			if(code == 0){
 				logger.log('编译完成 ！' + ('耗时：' + ( (Date.now()-d))/1000 )+'秒\n' ) 
 				
-				let questions = [{
-					type: 'confirm',
-					name: 'startDev',
-					message:'是否要提交代码'
-				}]
-				inquirer.prompt(questions).then(function (answers) {
-					if(answers.startDev){
-						funs.submit()
-					}else{
-						process.exit()
-					}
-				})
+				// let questions = [{
+				// 	type: 'confirm',
+				// 	name: 'startDev',
+				// 	message:'是否要提交代码'
+				// }]
+				// inquirer.prompt(questions).then(function (answers) {
+				// 	if(answers.startDev){
+				// 		funs.submit()
+				// 	}else{
+				// 		process.exit()
+				// 	}
+				// })
 			}else{
 				logger.fatal(`编译错误: ${code}\n`)
 			}
@@ -360,7 +363,9 @@ const funs = {
 			let d = Date.now()
 			logger.log('正在编译中,请稍候...\n')
 			let webpack = spawn('webpack',['-p',file_path])
-
+			webpack.stdout.on('data', function(chunk) {
+				console.log(chunk.toString());
+			});
 			webpack.on('close',function(code){
 				if(code == 0){
 					logger.log('编译完成 ！' + ('耗时：' + ( (Date.now()-d))/1000 )+'秒\n' ) 
@@ -500,7 +505,7 @@ function initAsk(menus){
 }
 
 function upgrade(){
-	logger.success(`发现新版本，更新中...\n`);
+	logger.success(`更新中...\n`);
 	let cmd	= spawn('vug', ['upgrade'])
 	cmd.on('exit', (err)=>{
 		if(err){

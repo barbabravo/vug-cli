@@ -24,11 +24,12 @@ function run() {
 
     update.on('close', code => {
         spinner.stop();
-        var new_version = require('../package.json').version;
+        var new_version = utils.getVersion(),
+            new_bundleid = utils.getBundleid();
         if(code != 0){
-            logger.fatal(`更新失败，错误码 ${code}`);
+            logger.fatal(`更新${new_version}失败，错误码 ${code}`);
         }else{
-            logger.success(`更新成功，当前版本 ${new_version}`);        
+            logger.success(`更新成功，当前版本 ${new_version},版本号 ${new_bundleid}`);        
         }
     })
 }
